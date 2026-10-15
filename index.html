@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&family=Orbitron:wght@500;700;900&family=Prompt:wght@300;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     
-    <!-- MediaPipe Hands & Camera Utils (Official Google CDN) -->
+    <!-- MediaPipe Hands & Camera Utils -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
@@ -107,7 +107,7 @@
             </div>
         </div>
 
-        <!-- SPEECH PANEL (Fasa 2 & Fasa 4) -->
+        <!-- SPEECH PANEL -->
         <div id="speechPanel" class="hidden glass-panel rounded-2xl p-6 max-w-2xl mx-auto text-center pointer-events-auto border-amber-500/50 my-auto shadow-2xl">
             <div class="text-xs font-tech text-amber-400 font-bold mb-1 uppercase tracking-widest">Pengecaman Sebutan Suara</div>
             <div id="speechTargetLabel" class="text-xs text-gray-300 mb-2">Sila baca teks di bawah dengan jelas:</div>
@@ -131,7 +131,7 @@
             </div>
         </div>
 
-        <!-- BOTTOM HUD: AI NOVA -->
+        <!-- BOTTOM HUD -->
         <div class="glass-panel rounded-xl p-3 max-w-xl mx-auto flex items-center gap-3 border-cyan-500/30 pointer-events-auto">
             <div class="w-10 h-10 rounded-full border border-cyan-400 flex items-center justify-center bg-cyan-950 shrink-0">
                 <span class="font-tech text-xs font-bold text-cyan-300">NOVA</span>
@@ -223,6 +223,7 @@
 
         const canvas = document.getElementById('arCanvas');
         const ctx = canvas.getContext('2d');
+        const videoElement = document.getElementById('webcam');
         let audioCtx = null;
 
         function initAudio() {
@@ -432,6 +433,14 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Lukis video kamera ke latar belakang canvas (Mirrored)
+            if (videoElement.readyState === 4) {
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
             activeDrones.forEach(drone => {
                 drone.update();
                 drone.draw();
@@ -455,8 +464,11 @@
             if (handPos.detected) {
                 ctx.fillStyle = '#06b6d4';
                 ctx.beginPath();
-                ctx.arc(handPos.x, handPos.y, 15, 0, Math.PI * 2);
+                ctx.arc(handPos.x, handPos.y, 20, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
             }
 
             updateGameLogic();
@@ -464,16 +476,13 @@
         }
 
         async function setupCamera() {
-            const videoElement = document.getElementById('webcam');
             const statusText = document.getElementById('cameraStatusText');
 
             try {
                 if (typeof Hands === 'undefined') {
-                    statusText.innerText = "⚠️ Pustaka MediaPipe gagal dimuatkan. Sila pastikan anda terhubung dengan internet.";
+                    statusText.innerText = "⚠️ Pustaka MediaPipe gagal dimuatkan. Sila semak sambungan internet.";
                     return;
                 }
-
-                statusText.innerText = "Mengaktifkan kamera... Sila tekan 'ALLOW' jika popup muncul.";
 
                 const hands = new Hands({
                     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -506,10 +515,8 @@
                 });
 
                 await camera.start();
-                statusText.innerText = "Kamera berjaya diaktifkan!";
             } catch (err) {
                 console.error(err);
-                statusText.innerText = "❌ Kamera gagal diakses! Sila pastikan tiada aplikasi lain sedang menggunakan kamera.";
             }
         }
 
