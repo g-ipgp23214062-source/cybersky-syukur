@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&family=Orbitron:wght@500;700;900&family=Prompt:wght@300;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     
-    <!-- MediaPipe Hands & Camera Utils -->
+    <!-- MediaPipe Hands & Camera Utils (Official Google CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
@@ -38,7 +38,7 @@
         .font-tech { font-family: var(--font-tech); }
 
         .glass-panel {
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(56, 189, 248, 0.3);
@@ -146,7 +146,7 @@
     </div>
 
     <!-- START MODAL -->
-    <div id="startModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+    <div id="startModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
         <div class="glass-panel max-w-lg w-full rounded-3xl p-6 border-cyan-500/50 text-center">
             <div class="text-xs font-tech text-cyan-400 tracking-widest mb-1">MISI PENDIDIKAN AR INTERAKTIF</div>
             <h1 class="text-2xl font-arabic font-bold text-white mb-1">درع السماء السيبراني</h1>
@@ -159,7 +159,9 @@
                 <div>🎙️ <b>4. Baca Ayat/Maksud:</b> Baca sebutan apabila fasa pembacaan bermula.</div>
             </div>
 
-            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl font-tech font-bold text-white hover:brightness-110 transition-all shadow-lg">
+            <div id="cameraStatusText" class="text-xs text-amber-400 mb-3 font-tech">Sila benarkan akses kamera apabila diminta...</div>
+
+            <button id="btnStart" onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl font-tech font-bold text-white hover:brightness-110 transition-all shadow-lg">
                 MULA MISI SEKARANG
             </button>
         </div>
@@ -196,7 +198,6 @@
     </div>
 
     <script>
-        // DATA SETS
         const DATA_ARAB = [
             { id: 1, text: "وَإِذْ تَأَذَّنَ", label: "[1] وَإِذْ تَأَذَّنَ" },
             { id: 2, text: "رَبُّكُمْ", label: "[2] رَبُّكُمْ" },
@@ -211,7 +212,6 @@
             { id: 4, text: "نسچاڽ اکو اکن تمبه نعمتكو كڤد کامو.", label: "[4] نسچاڽ اکو اکن..." }
         ];
 
-        // GAME STATE
         let currentPhase = 1;
         let currentIndex = 0;
         let score = 0;
@@ -221,7 +221,6 @@
         let lockTarget = null;
         let lockTimer = 0;
 
-        // CANVAS & AUDIO
         const canvas = document.getElementById('arCanvas');
         const ctx = canvas.getContext('2d');
         let audioCtx = null;
@@ -268,7 +267,6 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // DRONE CLASS
         class Drone {
             constructor(data) {
                 this.data = data;
@@ -290,7 +288,6 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Quadcopter arms
                 ctx.strokeStyle = '#06b6d4';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
@@ -298,7 +295,6 @@
                 ctx.moveTo(50, -50); ctx.lineTo(-50, 50);
                 ctx.stroke();
 
-                // Core Body
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
                 ctx.strokeStyle = lockTarget === this ? '#f59e0b' : '#38bdf8';
                 ctx.lineWidth = lockTarget === this ? 4 : 2;
@@ -307,7 +303,6 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // Text
                 ctx.fillStyle = '#ffffff';
                 ctx.font = currentPhase === 1 ? '24px "Noto Naskh Arabic"' : '16px "Noto Naskh Arabic"';
                 ctx.textAlign = 'center';
@@ -332,7 +327,6 @@
                     document.getElementById('targetHint').innerText = `Sasaran Seterusnya: ${currentTargetData.label}`;
                 }
 
-                // Check collision/locking with hand
                 if (handPos.detected) {
                     let closest = null;
                     let minDist = 80;
@@ -370,7 +364,6 @@
             const targetData = dataset[currentIndex];
 
             if (drone.data.id === targetData.id) {
-                // CORRECT
                 playSound('explosion');
                 playSound('laser');
                 score += 100 * combo;
@@ -386,7 +379,6 @@
                     advancePhase();
                 }
             } else {
-                // WRONG
                 playSound('error');
                 combo = 1;
                 document.getElementById('comboDisplay').innerText = `×1`;
@@ -430,24 +422,21 @@
 
         function toggleSpeechRecognition() {
             const status = document.getElementById('speechStatus');
-            status.innerText = "Mendengar sebutan... (Atau tekan butang pengesahan manual)";
+            status.innerText = "Mendengar sebutan... (Atau tekan pass manual)";
             setTimeout(() => {
                 status.innerText = "Sebutan Diterima! Misi dilanjutkan.";
                 setTimeout(passSpeechPhase, 1000);
-            }, 1500);
+            }, 1200);
         }
 
-        // RENDER LOOP
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update & Draw Drones
             activeDrones.forEach(drone => {
                 drone.update();
                 drone.draw();
             });
 
-            // Draw Target Lock Laser Meter
             if (handPos.detected && lockTarget) {
                 ctx.strokeStyle = '#f59e0b';
                 ctx.lineWidth = 3;
@@ -456,7 +445,6 @@
                 ctx.lineTo(lockTarget.x, lockTarget.y);
                 ctx.stroke();
 
-                // Charging Ring
                 ctx.beginPath();
                 ctx.arc(handPos.x, handPos.y, 30, 0, (Math.PI * 2) * (lockTimer / 0.75));
                 ctx.strokeStyle = '#06b6d4';
@@ -464,7 +452,6 @@
                 ctx.stroke();
             }
 
-            // Draw Cyber Gauntlet
             if (handPos.detected) {
                 ctx.fillStyle = '#06b6d4';
                 ctx.beginPath();
@@ -476,41 +463,54 @@
             requestAnimationFrame(render);
         }
 
-        // MEDIAPIPE HANDS SETUP
-        function setupCamera() {
+        async function setupCamera() {
             const videoElement = document.getElementById('webcam');
-            const hands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
+            const statusText = document.getElementById('cameraStatusText');
 
-            hands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.6,
-                minTrackingConfidence: 0.6
-            });
-
-            hands.onResults((results) => {
-                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                    const landmarks = results.multiHandLandmarks[0];
-                    // Palm Center (Landmark 9)
-                    handPos.x = (1 - landmarks[9].x) * canvas.width;
-                    handPos.y = landmarks[9].y * canvas.height;
-                    handPos.detected = true;
-                } else {
-                    handPos.detected = false;
+            try {
+                if (typeof Hands === 'undefined') {
+                    statusText.innerText = "⚠️ Pustaka MediaPipe gagal dimuatkan. Sila pastikan anda terhubung dengan internet.";
+                    return;
                 }
-            });
 
-            const camera = new Camera(videoElement, {
-                onFrame: async () => {
-                    await hands.send({ image: videoElement });
-                },
-                width: 1280,
-                height: 720
-            });
+                statusText.innerText = "Mengaktifkan kamera... Sila tekan 'ALLOW' jika popup muncul.";
 
-            camera.start();
+                const hands = new Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                });
+
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                hands.onResults((results) => {
+                    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                        const landmarks = results.multiHandLandmarks[0];
+                        handPos.x = (1 - landmarks[9].x) * canvas.width;
+                        handPos.y = landmarks[9].y * canvas.height;
+                        handPos.detected = true;
+                    } else {
+                        handPos.detected = false;
+                    }
+                });
+
+                const camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await hands.send({ image: videoElement });
+                    },
+                    width: 1280,
+                    height: 720
+                });
+
+                await camera.start();
+                statusText.innerText = "Kamera berjaya diaktifkan!";
+            } catch (err) {
+                console.error(err);
+                statusText.innerText = "❌ Kamera gagal diakses! Sila pastikan tiada aplikasi lain sedang menggunakan kamera.";
+            }
         }
 
         function startGame() {
